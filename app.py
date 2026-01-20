@@ -1,8 +1,8 @@
 """
-Aadhaar Societal Insights Dashboard
-====================================
-Professional research-grade dashboard for visualizing societal insights
-from Aadhaar enrolment, demographic, and biometric update data.
+Aadhaar Life-Event Insights Dashboard
+======================================
+Research-grade dashboard revealing population-level life transitions
+from Aadhaar activity patterns across India.
 
 Run with: streamlit run app.py
 """
@@ -16,40 +16,28 @@ import json
 from pathlib import Path
 
 # =============================================================================
-# PAGE CONFIG - Light Mode, Research Paper Style
+# PAGE CONFIG
 # =============================================================================
 
 st.set_page_config(
-    page_title="Aadhaar Societal Insights",
-    page_icon="📊",
+    page_title="India Life-Event Insights",
+    page_icon="🇮🇳",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Force Light Mode with Research Paper Styling
+# Light Mode Research Paper Styling
 st.markdown("""
 <style>
-    /* Force light mode */
-    :root {
-        color-scheme: light !important;
-    }
+    :root { color-scheme: light !important; }
+    .stApp { background-color: #ffffff !important; }
+    #MainMenu, footer, header { visibility: hidden; }
     
-    .stApp {
-        background-color: #ffffff !important;
-    }
-    
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Base typography - readable, professional */
     html, body, [class*="css"] {
         font-family: 'Georgia', 'Times New Roman', serif !important;
         color: #1a1a1a !important;
     }
     
-    /* Headers */
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Georgia', 'Times New Roman', serif !important;
         color: #000000 !important;
@@ -62,7 +50,6 @@ st.markdown("""
         color: #000000 !important;
         text-align: center;
         margin-bottom: 0.3rem;
-        line-height: 1.3;
     }
     
     .subtitle {
@@ -83,7 +70,6 @@ st.markdown("""
         border-bottom: 2px solid #333333;
     }
     
-    /* Metrics boxes */
     .metric-box {
         background-color: #f8f8f8 !important;
         border: 1px solid #cccccc !important;
@@ -97,7 +83,6 @@ st.markdown("""
         font-size: 1.8rem !important;
         font-weight: 700 !important;
         color: #000000 !important;
-        line-height: 1.2;
     }
     
     .metric-label {
@@ -105,10 +90,8 @@ st.markdown("""
         color: #444444 !important;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin-top: 0.3rem;
     }
     
-    /* Insight cards */
     .insight-box {
         background-color: #fafafa !important;
         border: 1px solid #dddddd !important;
@@ -129,29 +112,20 @@ st.markdown("""
         font-size: 0.95rem !important;
         color: #222222 !important;
         line-height: 1.6;
-        margin-bottom: 0.4rem;
     }
     
     .insight-why {
         font-size: 0.9rem !important;
         color: #444444 !important;
         font-style: italic;
-        line-height: 1.5;
     }
     
-    /* Legend items */
     .legend-item {
         font-size: 0.9rem !important;
         color: #222222 !important;
         padding: 0.3rem 0;
     }
     
-    /* Tables */
-    .stDataFrame {
-        font-size: 0.9rem !important;
-    }
-    
-    /* Tabs - make text readable */
     .stTabs [data-baseweb="tab-list"] {
         gap: 4px;
         background-color: #f0f0f0;
@@ -172,46 +146,13 @@ st.markdown("""
     .stTabs [aria-selected="true"] {
         background-color: #333333 !important;
         color: #ffffff !important;
-        border-color: #333333 !important;
     }
     
-    /* All paragraph text */
-    p, span, div {
-        color: #1a1a1a !important;
-    }
-    
-    /* Links */
-    a {
-        color: #0066cc !important;
-    }
-    
-    /* Markdown tables */
-    table {
-        color: #000000 !important;
-        border-collapse: collapse !important;
-    }
-    
-    th, td {
-        color: #000000 !important;
-        border: 1px solid #cccccc !important;
-        padding: 8px 12px !important;
-    }
-    
-    th {
-        background-color: #f0f0f0 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Plotly charts container */
-    .js-plotly-plot {
-        background-color: #ffffff !important;
-    }
-    
-    /* Expander */
-    .streamlit-expanderHeader {
-        color: #000000 !important;
-        font-weight: 600 !important;
-    }
+    p, span, div { color: #1a1a1a !important; }
+    a { color: #0066cc !important; }
+    table { color: #000000 !important; }
+    th, td { color: #000000 !important; border: 1px solid #cccccc !important; padding: 8px 12px !important; }
+    th { background-color: #f0f0f0 !important; font-weight: 600 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -219,7 +160,6 @@ st.markdown("""
 # DATA LOADING
 # =============================================================================
 
-# Use relative paths for Streamlit Cloud deployment
 DATA_DIR = Path(__file__).parent / "Data"
 GEOJSON_PATH = Path(__file__).parent / "india_states.geojson"
 
@@ -255,80 +195,114 @@ def load_geojson():
         return json.load(f)
 
 @st.cache_data
-def compute_state_pressures(df):
-    """Compute pressure signals aggregated by state."""
+def compute_life_events(df):
+    """Classify each state by dominant life-event pattern."""
     state_agg = df.groupby('state').agg({
         'enrol_18plus': 'sum',
         'demo_17plus': 'sum',
         'bio_17plus': 'sum'
     }).reset_index()
     
-    state_agg.columns = ['state', 'entry_pressure', 'admin_pressure', 'physical_pressure']
+    state_agg.columns = ['state', 'new_adults', 'address_changes', 'biometric_updates']
     
-    for col in ['entry_pressure', 'admin_pressure', 'physical_pressure']:
+    # Normalize each signal (0-1)
+    for col in ['new_adults', 'address_changes', 'biometric_updates']:
         max_val = state_agg[col].max()
-        if max_val > 0:
-            state_agg[f'{col}_norm'] = state_agg[col] / max_val
-        else:
-            state_agg[f'{col}_norm'] = 0
+        state_agg[f'{col}_norm'] = state_agg[col] / max_val if max_val > 0 else 0
     
-    def get_dominant(row):
-        pressures = {
-            'Entry-driven': row['entry_pressure_norm'],
-            'Demographic-driven': row['admin_pressure_norm'],
-            'Biometric-driven': row['physical_pressure_norm']
-        }
-        return max(pressures, key=pressures.get)
+    # Compute behavioral indicators
+    state_agg['migration_inflow'] = state_agg['address_changes'] / state_agg['new_adults'].replace(0, 1)
+    state_agg['workforce_activity'] = state_agg['biometric_updates'] / state_agg['address_changes'].replace(0, 1)
     
-    state_agg['dominant_pressure'] = state_agg.apply(get_dominant, axis=1)
-    state_agg['admin_entry_ratio'] = state_agg['admin_pressure'] / state_agg['entry_pressure'].replace(0, 1)
-    state_agg['bio_admin_ratio'] = state_agg['physical_pressure'] / state_agg['admin_pressure'].replace(0, 1)
+    # Classify dominant life-event
+    def classify_region(row):
+        # Migration classification
+        if row['migration_inflow'] > 50:
+            if row['workforce_activity'] > 0.8:
+                return "Urban Absorption Zone"
+            else:
+                return "In-Migration Hub"
+        elif row['migration_inflow'] < 10:
+            return "Out-Migration Region"
+        
+        # Address change dominant
+        if row['address_changes_norm'] > row['new_adults_norm'] * 1.5:
+            if row['workforce_activity'] > 0.6:
+                return "Workforce Churn"
+            else:
+                return "Household Formation"
+        
+        # Biometric dominant
+        if row['biometric_updates_norm'] > max(row['address_changes_norm'], row['new_adults_norm']):
+            return "High Work-Related Stress"
+        
+        # Balanced
+        if row['new_adults_norm'] > 0.3:
+            return "Emerging Urban Centre"
+        
+        return "Stable Population"
+    
+    state_agg['life_event'] = state_agg.apply(classify_region, axis=1)
     
     return state_agg
 
 @st.cache_data
-def compute_daily_national(df):
-    """Compute national daily pressure signals."""
+def compute_daily_trends(df):
+    """Compute national daily life-event trends."""
     daily = df.groupby('date').agg({
         'enrol_18plus': 'sum',
         'demo_17plus': 'sum',
         'bio_17plus': 'sum'
     }).reset_index()
-    daily.columns = ['date', 'Entry', 'Admin', 'Physical']
+    daily.columns = ['date', 'New Adults Entering', 'Address Changes', 'Work Verifications']
     return daily
 
 # =============================================================================
-# VISUALIZATION FUNCTIONS - Light theme, readable
+# LIFE-EVENT COLOR SCHEME
+# =============================================================================
+
+LIFE_EVENT_COLORS = {
+    "In-Migration Hub": "#2171b5",
+    "Out-Migration Region": "#6baed6",
+    "Urban Absorption Zone": "#08519c",
+    "Household Formation": "#cb181d",
+    "Workforce Churn": "#f16913",
+    "High Work-Related Stress": "#d94801",
+    "Emerging Urban Centre": "#31a354",
+    "Stable Population": "#969696"
+}
+
+LIFE_EVENT_DESCRIPTIONS = {
+    "In-Migration Hub": "High volume of people moving in and updating addresses",
+    "Out-Migration Region": "People enroll here but later move to other regions",
+    "Urban Absorption Zone": "Active job market absorbing workers from elsewhere",
+    "Household Formation": "New households forming — marriages, families moving",
+    "Workforce Churn": "High job turnover with frequent address and work updates",
+    "High Work-Related Stress": "Intensive work verification activity",
+    "Emerging Urban Centre": "Growing urban area with new residents",
+    "Stable Population": "Low life-event activity, settled population"
+}
+
+# =============================================================================
+# VISUALIZATIONS
 # =============================================================================
 
 def create_india_map(state_data, geojson):
-    """Create India choropleth map with proper sizing."""
-    
-    color_map = {
-        'Entry-driven': '#2171b5',
-        'Demographic-driven': '#cb181d', 
-        'Biometric-driven': '#f16913'
-    }
+    """Create India map with life-event classification."""
     
     fig = px.choropleth(
         state_data,
         geojson=geojson,
         locations='state',
         featureidkey='properties.NAME_1',
-        color='dominant_pressure',
-        color_discrete_map=color_map,
+        color='life_event',
+        color_discrete_map=LIFE_EVENT_COLORS,
         hover_name='state',
         hover_data={
             'state': False,
-            'dominant_pressure': True,
-            'admin_entry_ratio': ':.1f',
-            'bio_admin_ratio': ':.2f'
+            'life_event': True
         },
-        labels={
-            'dominant_pressure': 'Dominant Pressure',
-            'admin_entry_ratio': 'Admin/Entry Ratio',
-            'bio_admin_ratio': 'Bio/Admin Ratio'
-        }
+        labels={'life_event': 'Life Event Pattern'}
     )
     
     fig.update_geos(
@@ -343,17 +317,16 @@ def create_india_map(state_data, geojson):
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.05,
+            y=-0.08,
             xanchor="center",
             x=0.5,
             title=None,
-            font=dict(size=11, color='#000000'),
+            font=dict(size=10, color='#000000'),
             bgcolor='rgba(255,255,255,0.9)'
         ),
         paper_bgcolor='#ffffff',
-        plot_bgcolor='#ffffff',
         title=dict(
-            text="<b>Dominant Life-Event Pressure by State</b>",
+            text="<b>What Life Changes Are Happening Across India?</b>",
             font=dict(size=14, color='#000000', family='Georgia'),
             x=0.5
         ),
@@ -362,13 +335,17 @@ def create_india_map(state_data, geojson):
     
     return fig
 
-def create_pressure_timeline(daily_data):
-    """Create national pressure timeline."""
+def create_timeline(daily_data):
+    """Create activity timeline."""
     fig = go.Figure()
     
-    colors = {'Entry': '#2171b5', 'Admin': '#cb181d', 'Physical': '#f16913'}
+    colors = {
+        'New Adults Entering': '#2171b5',
+        'Address Changes': '#cb181d',
+        'Work Verifications': '#f16913'
+    }
     
-    for col in ['Entry', 'Admin', 'Physical']:
+    for col in ['New Adults Entering', 'Address Changes', 'Work Verifications']:
         fig.add_trace(go.Scatter(
             x=daily_data['date'],
             y=daily_data[col],
@@ -381,7 +358,7 @@ def create_pressure_timeline(daily_data):
         height=320,
         margin=dict(l=50, r=20, t=50, b=50),
         xaxis_title="Date",
-        yaxis_title="Activity Volume",
+        yaxis_title="Daily Activity",
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -394,47 +371,40 @@ def create_pressure_timeline(daily_data):
         paper_bgcolor='#ffffff',
         plot_bgcolor='#f8f8f8',
         title=dict(
-            text="<b>National Pressure Signals Over Time</b>",
+            text="<b>Life-Event Activity Over Time</b>",
             font=dict(size=14, color='#000000', family='Georgia'),
             x=0.5
         ),
         font=dict(color='#000000')
     )
     
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#e0e0e0', linecolor='#000000', tickfont=dict(color='#000000'))
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e0e0e0', linecolor='#000000', tickfont=dict(color='#000000'))
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#e0e0e0', tickfont=dict(color='#000000'))
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#e0e0e0', tickfont=dict(color='#000000'))
     
     return fig
 
-def create_state_bar_chart(state_data, metric='admin_entry_ratio', top_n=15):
-    """Create horizontal bar chart."""
+def create_life_event_bar(state_data, metric='migration_inflow', title="Top Regions", top_n=12):
+    """Create bar chart for life-event ranking."""
     sorted_data = state_data.nlargest(top_n, metric)
     
-    titles = {
-        'admin_entry_ratio': "States by Admin/Entry Ratio",
-        'bio_admin_ratio': "States by Bio/Admin Ratio"
-    }
-    colors = {
-        'admin_entry_ratio': '#2171b5',
-        'bio_admin_ratio': '#f16913'
-    }
+    colors = [LIFE_EVENT_COLORS.get(le, '#666666') for le in sorted_data['life_event']]
     
     fig = go.Figure(go.Bar(
         x=sorted_data[metric],
         y=sorted_data['state'],
         orientation='h',
-        marker_color=colors.get(metric, '#333333')
+        marker_color=colors
     ))
     
     fig.update_layout(
         height=380,
         margin=dict(l=100, r=20, t=50, b=50),
-        xaxis_title=metric.replace('_', ' ').title(),
+        xaxis_title=None,
         yaxis_title=None,
         paper_bgcolor='#ffffff',
         plot_bgcolor='#f8f8f8',
         title=dict(
-            text=f"<b>{titles.get(metric, metric)}</b>",
+            text=f"<b>{title}</b>",
             font=dict(size=13, color='#000000', family='Georgia'),
             x=0.5
         ),
@@ -446,122 +416,80 @@ def create_state_bar_chart(state_data, metric='admin_entry_ratio', top_n=15):
     
     return fig
 
-def create_pie_chart(state_data):
-    """Create pressure distribution pie chart."""
-    dist = state_data['dominant_pressure'].value_counts()
-    
-    colors = {
-        'Entry-driven': '#2171b5',
-        'Demographic-driven': '#cb181d',
-        'Biometric-driven': '#f16913'
-    }
+def create_distribution_chart(state_data):
+    """Create life-event distribution chart."""
+    dist = state_data['life_event'].value_counts()
     
     fig = go.Figure(go.Pie(
         labels=dist.index,
         values=dist.values,
-        marker_colors=[colors.get(x, '#666666') for x in dist.index],
+        marker_colors=[LIFE_EVENT_COLORS.get(x, '#666666') for x in dist.index],
         hole=0.4,
         textinfo='label+percent',
         textposition='outside',
-        textfont=dict(size=11, color='#000000')
+        textfont=dict(size=10, color='#000000')
     ))
     
     fig.update_layout(
-        height=280,
+        height=300,
         margin=dict(l=20, r=20, t=50, b=20),
         showlegend=False,
         paper_bgcolor='#ffffff',
         title=dict(
-            text="<b>Region Typology Distribution</b>",
+            text="<b>Life-Event Distribution</b>",
             font=dict(size=13, color='#000000', family='Georgia'),
             x=0.5
-        ),
-        font=dict(color='#000000')
+        )
     )
-    
-    return fig
-
-def create_correlation_heatmap(state_data):
-    """Create correlation heatmap."""
-    corr_cols = ['entry_pressure', 'admin_pressure', 'physical_pressure']
-    corr_matrix = state_data[corr_cols].corr()
-    labels = ['Entry', 'Admin', 'Physical']
-    
-    fig = go.Figure(go.Heatmap(
-        z=corr_matrix.values,
-        x=labels,
-        y=labels,
-        colorscale='RdBu_r',
-        zmid=0,
-        text=np.round(corr_matrix.values, 2),
-        texttemplate='%{text}',
-        textfont=dict(size=14, color='#000000')
-    ))
-    
-    fig.update_layout(
-        height=280,
-        margin=dict(l=60, r=20, t=50, b=60),
-        paper_bgcolor='#ffffff',
-        title=dict(
-            text="<b>Pressure Signal Correlations</b>",
-            font=dict(size=13, color='#000000', family='Georgia'),
-            x=0.5
-        ),
-        font=dict(color='#000000')
-    )
-    
-    fig.update_xaxes(tickfont=dict(color='#000000'))
-    fig.update_yaxes(tickfont=dict(color='#000000'))
     
     return fig
 
 # =============================================================================
-# INSIGHTS CONTENT
+# KEY FINDINGS
 # =============================================================================
 
 INSIGHTS = [
     {
-        "title": "Clear Migration Asymmetry Detected",
-        "what": "States show 2-10x variation in admin/entry ratios, revealing distinct absorbing versus sending regions.",
-        "why": "High admin/entry ratio indicates people moving IN and updating addresses. Low ratio suggests origin states where people enroll but later migrate out."
+        "title": "Clear In-Migration and Out-Migration Corridors",
+        "what": "Some states consistently receive people moving in (high address changes), while others see residents leave after initial enrollment.",
+        "why": "This reveals internal migration flows across India — who is absorbing population and who is sending."
     },
     {
-        "title": "Workforce Churn Hotspots Identified",
-        "what": "12 states show bio-admin correlation above 0.7, concentrated in NCR, Punjab-Haryana, and industrialized regions.",
-        "why": "Synchronized biometric and demographic updates signal workforce turnover — job changes require both address updates and biometric re-verification."
+        "title": "Workforce Churn Concentrated in Industrial Regions",
+        "what": "NCR, Punjab-Haryana, and Gujarat show synchronized address changes and work verifications.",
+        "why": "These are high job-turnover areas where workers frequently change employers and locations."
     },
     {
-        "title": "Household Formation Patterns Visible",
-        "what": "Demographic update spikes occur without corresponding enrolment increases in several regions.",
-        "why": "This is the classic household formation signature — existing Aadhaar holders changing addresses due to marriage, new family formation, or independent housing."
+        "title": "Household Formation Visible in Address Changes",
+        "what": "Address changes spike without new enrollments in several regions.",
+        "why": "This is the signature of household formation — marriages, new families, young adults moving out."
     },
     {
-        "title": "Administrative Pressure Dominates Nationally",
-        "what": "Nationwide, administrative pressure exceeds entry pressure by approximately 100x.",
-        "why": "The identity system is mature. Most adult activity reflects life changes (address moves, corrections) rather than first-time enrollment."
+        "title": "Address Changes Dominate Nationwide",
+        "what": "Across India, address changes far exceed new adult enrollments.",
+        "why": "The identity system is mature — most activity now reflects life changes, not first-time registration."
     },
     {
-        "title": "Regional Pressure Divergence",
-        "what": "Northeast states cluster as transitional zones; Southern states show higher biometric activity.",
-        "why": "Different economic patterns and welfare program verification requirements create distinct regional pressure profiles."
+        "title": "Regional Life-Event Patterns Differ Sharply",
+        "what": "Northeast shows stable populations; South shows high work verification activity.",
+        "why": "Different economic structures and welfare requirements create distinct regional signatures."
     }
 ]
 
 # =============================================================================
-# MAIN APPLICATION
+# MAIN APP
 # =============================================================================
 
 def main():
-    # Title
-    st.markdown('<h1 class="main-title">Aadhaar Societal Insights Analysis</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle">Population-Level Patterns in Migration, Household Formation, and Workforce Dynamics</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-title">India Life-Event Insights</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">What Life Changes Are Happening Across India?</p>', unsafe_allow_html=True)
     
     # Load data
     with st.spinner("Loading data..."):
         df = load_data()
         geojson = load_geojson()
-        state_data = compute_state_pressures(df)
-        daily_data = compute_daily_national(df)
+        state_data = compute_life_events(df)
+        daily_data = compute_daily_trends(df)
     
     # Key Metrics
     st.markdown("---")
@@ -579,7 +507,7 @@ def main():
         st.markdown(f'''
         <div class="metric-box">
             <div class="metric-value">{state_data["state"].nunique()}</div>
-            <div class="metric-label">States/Regions</div>
+            <div class="metric-label">States Analyzed</div>
         </div>
         ''', unsafe_allow_html=True)
     
@@ -587,7 +515,7 @@ def main():
         st.markdown(f'''
         <div class="metric-box">
             <div class="metric-value">{df["pincode"].nunique():,}</div>
-            <div class="metric-label">Unique Pincodes</div>
+            <div class="metric-label">Localities Covered</div>
         </div>
         ''', unsafe_allow_html=True)
     
@@ -596,38 +524,34 @@ def main():
         st.markdown(f'''
         <div class="metric-box">
             <div class="metric-value" style="font-size: 1.2rem;">{date_range}</div>
-            <div class="metric-label">Date Range</div>
+            <div class="metric-label">Time Period</div>
         </div>
         ''', unsafe_allow_html=True)
     
     st.markdown("---")
     
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Geographic Analysis", "Temporal Analytics", "Key Findings", "Methodology"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Life-Event Map", "Trends", "Key Findings", "How It Works"])
     
-    # =================================
-    # TAB 1: Geographic Analysis
-    # =================================
+    # TAB 1: Map
     with tab1:
-        st.markdown('<h2 class="section-title">Dominant Life-Event Pressure by Region</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-title">What Life Changes Are Happening Where?</h2>', unsafe_allow_html=True)
         
         st.markdown("""
-        Each region is classified by its **dominant pressure type** — the life-event signal with the 
-        highest normalized activity. This reveals what kind of life transition is shaping each area.
+        Each region is classified by its **dominant life-event pattern**. 
+        Point at any state to see what kind of life changes are most common there.
         """)
         
         # Legend
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown('<p class="legend-item"><b style="color:#2171b5;">■</b> <b>Entry-driven</b>: New adults entering identity system</p>', unsafe_allow_html=True)
-        with col2:
-            st.markdown('<p class="legend-item"><b style="color:#cb181d;">■</b> <b>Demographic-driven</b>: Address/identity changes</p>', unsafe_allow_html=True)
-        with col3:
-            st.markdown('<p class="legend-item"><b style="color:#f16913;">■</b> <b>Biometric-driven</b>: Re-verification activity</p>', unsafe_allow_html=True)
+        col1, col2, col3, col4 = st.columns(4)
+        legend_items = list(LIFE_EVENT_COLORS.items())[:8]
+        for i, (event, color) in enumerate(legend_items):
+            col = [col1, col2, col3, col4][i % 4]
+            with col:
+                st.markdown(f'<p class="legend-item"><b style="color:{color};">●</b> {event}</p>', unsafe_allow_html=True)
         
         st.markdown("")
         
-        # Map and Distribution side by side
         col_map, col_dist = st.columns([2, 1])
         
         with col_map:
@@ -635,48 +559,34 @@ def main():
             st.plotly_chart(fig_map, use_container_width=True)
         
         with col_dist:
-            fig_pie = create_pie_chart(state_data)
+            fig_pie = create_distribution_chart(state_data)
             st.plotly_chart(fig_pie, use_container_width=True)
             
-            st.markdown("**Top States by Admin/Entry Ratio:**")
-            top_states = state_data.nlargest(8, 'admin_entry_ratio')[['state', 'admin_entry_ratio', 'dominant_pressure']]
-            top_states.columns = ['State', 'Ratio', 'Type']
-            top_states['Ratio'] = top_states['Ratio'].round(1)
-            st.dataframe(top_states, use_container_width=True, hide_index=True)
+            st.markdown("**Top In-Migration Regions:**")
+            top_inflow = state_data.nlargest(6, 'migration_inflow')[['state', 'life_event']]
+            top_inflow.columns = ['State', 'Pattern']
+            st.dataframe(top_inflow, use_container_width=True, hide_index=True)
     
-    # =================================
-    # TAB 2: Temporal Analytics
-    # =================================
+    # TAB 2: Trends
     with tab2:
-        st.markdown('<h2 class="section-title">Pressure Signal Analytics</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-title">Life-Event Activity Over Time</h2>', unsafe_allow_html=True)
         
-        # Timeline
-        fig_timeline = create_pressure_timeline(daily_data)
+        fig_timeline = create_timeline(daily_data)
         st.plotly_chart(fig_timeline, use_container_width=True)
         
         st.markdown("")
         
-        # Bar charts
         col1, col2 = st.columns(2)
         
         with col1:
-            fig_admin = create_state_bar_chart(state_data, 'admin_entry_ratio')
-            st.plotly_chart(fig_admin, use_container_width=True)
+            fig_inflow = create_life_event_bar(state_data, 'migration_inflow', "Top In-Migration Regions")
+            st.plotly_chart(fig_inflow, use_container_width=True)
         
         with col2:
-            fig_bio = create_state_bar_chart(state_data, 'bio_admin_ratio')
-            st.plotly_chart(fig_bio, use_container_width=True)
-        
-        # Correlation
-        st.markdown("")
-        col1, col2, col3 = st.columns([1, 1.5, 1])
-        with col2:
-            fig_corr = create_correlation_heatmap(state_data)
-            st.plotly_chart(fig_corr, use_container_width=True)
+            fig_churn = create_life_event_bar(state_data, 'workforce_activity', "Top Workforce Activity Regions")
+            st.plotly_chart(fig_churn, use_container_width=True)
     
-    # =================================
-    # TAB 3: Key Findings
-    # =================================
+    # TAB 3: Findings
     with tab3:
         st.markdown('<h2 class="section-title">Key Findings</h2>', unsafe_allow_html=True)
         
@@ -684,58 +594,47 @@ def main():
             st.markdown(f'''
             <div class="insight-box">
                 <div class="insight-title">{i}. {insight["title"]}</div>
-                <div class="insight-text"><b>Observation:</b> {insight["what"]}</div>
-                <div class="insight-why"><b>Significance:</b> {insight["why"]}</div>
+                <div class="insight-text"><b>What we see:</b> {insight["what"]}</div>
+                <div class="insight-why"><b>Why it matters:</b> {insight["why"]}</div>
             </div>
             ''', unsafe_allow_html=True)
         
         st.markdown("---")
         st.markdown("""
-        **Data Source:** UIDAI Aadhaar activity data (enrolment, demographic updates, biometric updates)  
-        **Analysis Method:** Pressure signal framework with normalization and geographic clustering  
-        **Scope:** Population-level patterns only — no individual inference possible or attempted
+        **Data Source:** UIDAI activity data (new enrollments, address changes, work verifications)  
+        **Scope:** Population-level patterns only — no individual data used
         """)
     
-    # =================================
     # TAB 4: Methodology
-    # =================================
     with tab4:
-        st.markdown('<h2 class="section-title">Analytical Framework</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-title">How This Works</h2>', unsafe_allow_html=True)
         
         st.markdown("""
-        ### Pressure Signal Model
+        ### Three Types of Activity
         
-        This analysis treats Aadhaar activity as **three population-level pressure signals**:
-        """)
+        | Activity | What It Means |
+        |----------|---------------|
+        | **New Adults Entering** | People registering for the first time as adults |
+        | **Address Changes** | Existing holders updating their address (moving, household changes) |
+        | **Work Verifications** | Biometric re-verification (often required for jobs, benefits) |
         
-        st.markdown("""
-        | Pressure Type | Data Source | Interpretation |
-        |--------------|-------------|----------------|
-        | **Entry Pressure** | Adult enrolments (age 18+) | New adults entering formal identity system |
-        | **Admin Pressure** | Demographic updates (age 17+) | Life changes requiring address/identity updates |
-        | **Physical Pressure** | Biometric updates (age 17+) | Physical re-verification needs |
-        """)
+        ### How Regions Are Classified
         
-        st.markdown("""
-        ### Key Insight: Life Events as Pressure Imbalances
+        By comparing these three activities, we can identify what kind of life-event is dominant:
         
-        Life events manifest as **imbalances** between these pressure signals:
+        - **More address changes than new registrations** → People moving IN (In-Migration Hub)
+        - **Few address changes relative to registrations** → People moving OUT (Out-Migration Region)
+        - **High address changes + work verifications** → Job turnover (Workforce Churn)
+        - **Address changes without new registrations** → Existing households changing (Household Formation)
+        - **High work verifications** → Work-related activity (High Work-Related Stress)
         
-        - **Migration:** Admin pressure spike *precedes* enrolment in destination region, *follows* in origin region
-        - **Household Formation:** Admin spike *without* corresponding enrolment (existing holders moving)
-        - **Workforce Churn:** Admin + Bio spike *together* (job changes require both types of updates)
+        ### What This Reveals
         
-        ### Classification Method
-        
-        1. Normalize all three pressures to [0,1] scale per region
-        2. Identify the pressure with highest normalized value
-        3. Assign classification: Entry-driven, Demographic-driven, or Biometric-driven
-        
-        ### Ratio Interpretation
-        
-        - **Admin/Entry Ratio > 1:** "Absorbing" region (more address changes than new enrollments)
-        - **Admin/Entry Ratio < 1:** "Sending" region (people enrolled here tend to migrate out)
-        - **High Bio/Admin Ratio:** Workforce churn or verification-intensive region
+        Without tracking any individual, we can see:
+        - Where people are moving to and from
+        - Which areas have high job turnover
+        - Where new households are forming
+        - Which regions are absorbing workers
         """)
 
 if __name__ == "__main__":
