@@ -3,7 +3,7 @@
 > **UIDAI Data Hackathon Submission**  
 > Extracting societal insights from Aadhaar activity data to reveal population-level patterns in migration, household formation, and workforce dynamics.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://uidai.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://uidai-life.streamlit.app)
 
 ---
 
