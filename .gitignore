@@ -1,0 +1,17 @@
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Analysis outputs (optional - can include if wanted)
+visualizations/
+insights_report.md
+aadhaar_analysis.py

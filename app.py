@@ -219,8 +219,9 @@ st.markdown("""
 # DATA LOADING
 # =============================================================================
 
-DATA_DIR = Path("/Users/gajanan/Desktop/UIDAI/Data")
-GEOJSON_PATH = Path("/Users/gajanan/Desktop/UIDAI/india_states.geojson")
+# Use relative paths for Streamlit Cloud deployment
+DATA_DIR = Path(__file__).parent / "Data"
+GEOJSON_PATH = Path(__file__).parent / "india_states.geojson"
 
 @st.cache_data
 def load_data():
